@@ -39,13 +39,13 @@ module.exports = function(grunt) {
     compress.tar(this.files, function() {
 
       if (options.profile) {
-        AWS.config.credentials = new AWS.SharedIniFileCredentials({ profile: options.profile });
+        AWS.config.credentials = options.profile;
         console.log('Using credentials from profile \'' + options.profile + '\'');
       }
 
-      var sts = new AWS.STS();
+      var iam = new AWS.IAM();
 
-      sts.getCallerIdentity({}, function(err, data) {
+      iam.getUser({}, function(err, data) {
 
         if (err) {
 
@@ -54,7 +54,7 @@ module.exports = function(grunt) {
 
         } else {
 
-          git.short(function(rev) { 
+          git.short(function(rev) {
 
             var date = new Date();
             var y = date.getFullYear();
@@ -66,10 +66,9 @@ module.exports = function(grunt) {
               String(d = (d < 10) ? ('0' + d) : d) +
               '-' + rev +
               '-' + Math.floor((Math.random() * 899999) + 100000);
+            var label = options.label;
 
-            var label = options.application + '-' + version;
-
-            var account = data.Account;
+            var account = data.User.Arn.split(/:/)[4];
             var bucket = 'elasticbeanstalk-' + options.region + '-' + account;
 
             var body = fs.createReadStream(options.archive);
